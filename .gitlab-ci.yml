@@ -5,7 +5,7 @@ image:
         - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 
 variables:
-    PLAN: ~/plan.tfplan
+    PLAN: $CI_PROJECT_DIR/plan.tfplan
 
 before_script:
     - apk add curl
