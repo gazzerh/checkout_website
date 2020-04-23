@@ -7,3 +7,10 @@ before_script:
 
 stages:
     - validate
+
+validate:
+    stage: validate
+    script:
+        - echo "i work"
+    only:
+        - branches
