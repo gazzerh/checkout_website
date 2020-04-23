@@ -15,6 +15,7 @@ before_script:
 
 stages:
     - validate
+    - plan
 
 validate:
     stage: validate
@@ -22,3 +23,13 @@ validate:
     - terraform-aws
     script:
     - terraform validate
+
+plan:
+    stage: plan
+    script:
+        - terraform plan -out "planfile"
+    dependencies:
+        - validate
+    artifacts:
+        paths:
+            - planfile
