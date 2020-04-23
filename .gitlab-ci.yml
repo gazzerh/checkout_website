@@ -1,18 +1,24 @@
 image:
     name: hashicorp/terraform:light
+    entrypoint:
+        - '/usr/bin/env'
+        - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 
 before_script:
     - rm -rf .terraform
-    - terraform -version
+    - terraform --version
+    - mkdir -p ~/.aws
+    - echo "[default]\nregion = eu-west-2" > ~/.aws/config
+    - echo $AWS_CREDENTIALS | base64 -d > ~/.aws/credentials
 
 stages:
-    - validate
+    - validate_infra
 
 validate:
-    stage: validate
+    stage: validate_infra
     tags: 
     - terraform-aws
     script:
-    - echo "i work"
-    only:
-    - branches
+    - cd ./infra
+    - terraform init
+    - terraform validate
