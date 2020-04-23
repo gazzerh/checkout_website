@@ -5,12 +5,12 @@ variable "region" {
 
 variable "app_name" {
   description = "Name of application being deployed"
-  default     = "checkout_webapp"
+  default     = "company-website"
 }
 
 variable "app_version" {
   description = "Version of the application that should be deployed"
-  default     = "v0.1"
+  default     = "v0.2"
 }
 
 variable "fqdn" {
@@ -37,4 +37,19 @@ variable "alb_ingress_ports" {
 variable "log_retention_in_days" {
   description = "How many days are logs retained"
   default     = 7
+}
+
+variable "min_capacity" {
+  description = "what is the minimum amount of running instances"
+  default     = 1
+}
+
+variable "max_capacity" {
+  description = "what is the maxium amount of running instances"
+  default     = 5
+}
+
+variable "desired_count" {
+  description = "what is the desired amount of running instances"
+  default     = 1
 }
