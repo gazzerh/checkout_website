@@ -12,6 +12,7 @@ validate:
     stage: validate
     script:
         - echo "i work"
-    tags: garry-runner
+    tags: 
+        - garry-runner
     only:
         - branches
