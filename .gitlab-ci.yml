@@ -3,16 +3,17 @@ image:
 
 before_script:
     - rm -rf .terraform
-    - terraform --version
+    - terraform -version
 
 stages:
     - validate
 
 validate:
-    stage: validate
+    stage:
+        - validate
+    tags: 
+        - terraform-aws
     script:
         - echo "i work"
-    tags: 
-        - garry-runner
     only:
         - branches
