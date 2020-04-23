@@ -1,20 +1,20 @@
 variables:
-    PLAN: $CI_PROJECT_DIR/plan.tfplan
+  PLAN: $CI_PROJECT_DIR/plan.tfplan
 
 stages:
-    - build
-    - validate
-    - plan
-    - apply
+  - build
+  - validate
+  - plan
+  - apply
 
 build:
   stage: build
   tags:
     - shell
   before_script:
-      - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-      - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-      - aws ecr get-login-password | docker login -u AWS --password-stdin 425045515529.dkr.ecr.eu-west-2.amazonaws.com/checkout_webapp
+    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - aws ecr get-login-password | docker login -u AWS --password-stdin 425045515529.dkr.ecr.eu-west-2.amazonaws.com/checkout_webapp
   script:
     - docker build -t 425045515529.dkr.ecr.eu-west-2.amazonaws.com/checkout_webapp:$CI_COMMIT_TAG .
     - docker push 425045515529.dkr.ecr.eu-west-2.amazonaws.com/checkout_webapp:$CI_COMMIT_TAG
@@ -22,82 +22,82 @@ build:
     - tags
 
 validate:
-    stage: validate
-    image:
-      name: hashicorp/terraform:light
-      entrypoint:
-        - '/usr/bin/env'
-        - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
-    before_script:
-        - apk add curl
-        - rm -rf .terraform
-        - terraform --version
-        - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-        - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-        - cd ./infra
-        - terraform init
-    tags:
+  stage: validate
+  image:
+    name: hashicorp/terraform:light
+    entrypoint:
+      - "/usr/bin/env"
+      - "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  before_script:
+    - apk add curl
+    - rm -rf .terraform
+    - terraform --version
+    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - cd ./infra
+    - terraform init
+  tags:
     - terraform-aws
-    script:
-      - terraform validate
-      - terraform fmt -check=true
-    only:
-      - branches
+  script:
+    - terraform validate
+    - terraform fmt -check=true
+  only:
+    - branches
 
 merge review:
-   stage: plan
-    image:
-      name: hashicorp/terraform:light
-      entrypoint:
-        - '/usr/bin/env'
-        - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
-    before_script:
-        - apk add curl
-        - rm -rf .terraform
-        - terraform --version
-        - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-        - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-        - cd ./infra
-        - terraform init
-   tags:
-   - terraform-aws
-   script:
-     - terraform plan -out=$PLAN
-     - echo \`\`\`diff > plan.txt
-     - terraform show -no-color ${PLAN} | tee -a plan.txt
-     - echo \`\`\` >> plan.txt
-     - sed -i -e 's/  +/+/g' plan.txt
-     - sed -i -e 's/  ~/~/g' plan.txt
-     - sed -i -e 's/  -/-/g' plan.txt
-     - MESSAGE=$(cat plan.txt)
-     - >-
-       curl -X POST -g -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" 
-       --data-urlencode "body=${MESSAGE}" 
-       "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}/discussions"
-   artifacts:
-     name: plan
-     paths:
-       - $PLAN
-   only:
-     - merge_requests
+  stage: plan
+  image:
+    name: hashicorp/terraform:light
+    entrypoint:
+      - "/usr/bin/env"
+      - "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  before_script:
+    - apk add curl
+    - rm -rf .terraform
+    - terraform --version
+    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - cd ./infra
+    - terraform init
+  tags:
+    - terraform-aws
+  script:
+    - terraform plan -out=$PLAN
+    - echo \`\`\`diff > plan.txt
+    - terraform show -no-color ${PLAN} | tee -a plan.txt
+    - echo \`\`\` >> plan.txt
+    - sed -i -e 's/  +/+/g' plan.txt
+    - sed -i -e 's/  ~/~/g' plan.txt
+    - sed -i -e 's/  -/-/g' plan.txt
+    - MESSAGE=$(cat plan.txt)
+    - >-
+      curl -X POST -g -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" 
+      --data-urlencode "body=${MESSAGE}" 
+      "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}/discussions"
+  artifacts:
+    name: plan
+    paths:
+      - $PLAN
+  only:
+    - merge_requests
 
 plan production:
   stage: plan
-    image:
-      name: hashicorp/terraform:light
-      entrypoint:
-        - '/usr/bin/env'
-        - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
-    before_script:
-        - apk add curl
-        - rm -rf .terraform
-        - terraform --version
-        - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-        - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-        - cd ./infra
-        - terraform init
+  image:
+    name: hashicorp/terraform:light
+    entrypoint:
+      - "/usr/bin/env"
+      - "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  before_script:
+    - apk add curl
+    - rm -rf .terraform
+    - terraform --version
+    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - cd ./infra
+    - terraform init
   tags:
-  - terraform-aws
+    - terraform-aws
   script:
     - terraform plan -out=$PLAN
   artifacts:
@@ -106,24 +106,24 @@ plan production:
       - $PLAN
   only:
     - master
-      
+
 apply:
   stage: apply
   image:
     name: hashicorp/terraform:light
     entrypoint:
-      - '/usr/bin/env'
-      - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+      - "/usr/bin/env"
+      - "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
   before_script:
-      - apk add curl
-      - rm -rf .terraform
-      - terraform --version
-      - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-      - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-      - cd ./infra
-      - terraform init
+    - apk add curl
+    - rm -rf .terraform
+    - terraform --version
+    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - cd ./infra
+    - terraform init
   tags:
-  - terraform-aws
+    - terraform-aws
   script:
     - terraform apply -input=false $PLAN
   dependencies:
@@ -131,4 +131,3 @@ apply:
   only:
     - master
   when: manual
-  
