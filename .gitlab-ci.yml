@@ -71,6 +71,8 @@ plan production:
       
 apply:
   stage: apply
+  tags:
+  - terraform-aws
   script:
     - terraform apply -input=false $PLAN
     - DYNAMIC_ENVIRONMENT_URL=$(terraform output -no-color env-dynamic-url)
