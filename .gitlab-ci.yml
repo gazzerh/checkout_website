@@ -5,6 +5,7 @@ image:
         - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 
 before_script:
+    - apk add curl
     - rm -rf .terraform
     - terraform --version
     - mkdir -p ~/.aws
