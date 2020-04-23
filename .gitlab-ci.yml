@@ -9,11 +9,10 @@ stages:
     - validate
 
 validate:
-    stage:
-        - validate
+    stage: validate
     tags: 
-        - terraform-aws
+    - terraform-aws
     script:
-        - echo "i work"
+    - echo "i work"
     only:
-        - branches
+    - branches
