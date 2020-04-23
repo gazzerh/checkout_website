@@ -26,6 +26,8 @@ validate:
 
 plan:
     stage: plan
+    tags:
+    - terraform-aws
     script:
         - terraform plan -out "planfile"
     dependencies:
