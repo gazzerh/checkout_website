@@ -19,6 +19,8 @@ stages:
 
 validate:
     stage: validate
+    tags:
+    - terraform-aws
     script:
       - terraform validate
       - terraform fmt -check=true
@@ -27,6 +29,8 @@ validate:
 
 merge review:
     stage: plan
+    tags:
+    - terraform-aws
     script:
       - terraform plan -out=$PLAN
       - echo \`\`\`diff > plan.txt
