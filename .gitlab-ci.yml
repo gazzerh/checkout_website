@@ -1,22 +1,21 @@
-image:
+default:
+  image:
     name: hashicorp/terraform:light
-    entrypoint:
+      entrypoint:
         - '/usr/bin/env'
         - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+  before_script:
+      - apk add curl
+      - rm -rf .terraform
+      - terraform --version
+      - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+      - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+      - eval $(aws ecr get-login --no-include-email)
+      - cd ./infra
+      - terraform init
 
 variables:
     PLAN: $CI_PROJECT_DIR/plan.tfplan
-
-before_script:
-    - apk add curl
-    - rm -rf .terraform
-    - terraform --version
-    - mkdir -p ~/.aws
-    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-    - eval $(aws ecr get-login --no-include-email)
-    - cd ./infra
-    - terraform init
 
 stages:
     - build
@@ -28,6 +27,10 @@ build:
   stage: build
   tags:
     - shell
+  before_script:
+      - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+      - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+      - eval $(aws ecr get-login --no-include-email)
   script:
     - docker build -t 425045515529.dkr.ecr.eu-west-2.amazonaws.com/checkout_webapp:$CI_COMMIT_TAG .
     - docker push 425045515529.dkr.ecr.eu-west-2.amazonaws.com/checkout_webapp:$CI_COMMIT_TAG
