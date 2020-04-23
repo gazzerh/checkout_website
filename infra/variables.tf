@@ -5,12 +5,12 @@ variable "region" {
 
 variable "app_name" {
   description = "Name of application being deployed"
-  default     = "checkout_webapp2"
+  default     = "checkout_webapp"
 }
 
 variable "app_version" {
   description = "Version of the application that should be deployed"
-  default     = "v0.1"
+  default     = "v0.2"
 }
 
 variable "fqdn" {
