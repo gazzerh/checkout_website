@@ -5,7 +5,7 @@ image:
         - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 
 variables:
-    PLAN: plan.tfplan
+    PLAN: ~/plan.tfplan
 
 before_script:
     - apk add curl
@@ -36,8 +36,9 @@ merge review:
     tags:
     - terraform-aws
     script:
+      - terraform plan -out=$PLAN
       - echo \`\`\`diff > plan.txt
-      - terraform plan -out=${PLAN} | tee -a plan.txt
+      - terraform show -no-color ${PLAN} | tee -a plan.txt
       - echo \`\`\` >> plan.txt
       - sed -i -e 's/  +/+/g' plan.txt
       - sed -i -e 's/  ~/~/g' plan.txt
