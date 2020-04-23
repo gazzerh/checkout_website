@@ -14,13 +14,25 @@ before_script:
     - mkdir -p ~/.aws
     - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
     - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - eval $(aws ecr get-login --no-include-email)
     - cd ./infra
     - terraform init
 
 stages:
+    - build
     - validate
     - plan
     - apply
+
+build:
+  stage: build
+  tags:
+    - shell
+  script:
+    - docker build -t 425045515529.dkr.ecr.eu-west-2.amazonaws.com/checkout_webapp:$CI_COMMIT_TAG .
+    - docker push 425045515529.dkr.ecr.eu-west-2.amazonaws.com/checkout_webapp:$CI_COMMIT_TAG
+  only:
+    - tags
 
 validate:
     stage: validate
