@@ -5,7 +5,7 @@ variable "region" {
 
 variable "app_name" {
   description = "Name of application being deployed"
-  default     = "checkout_webapp"
+  default     = "company-website"
 }
 
 variable "app_version" {
