@@ -98,6 +98,7 @@ apply production:
   when: manual
   except:
     - triggers
+
 .docker_pre:
   stage: build
   before_script:
@@ -128,6 +129,7 @@ production build:
     - docker push $DOCKER_IMAGE_NAME:${APP_VERSION}-${CI_COMMIT_SHA::8}
   only:
     - master
+
 trigger scaling plan:
   extends: .tf_pre
   stage: plan
@@ -148,7 +150,7 @@ trigger scaling apply:
   script:
     - terraform apply -input=false $PLAN
   dependencies:
-    - plan production
+    - trigger scaling plan
   only:
     variables:
       - $CI_APP_SCALE_MIN
