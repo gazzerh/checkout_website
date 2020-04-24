@@ -1,65 +1,99 @@
-image:
+variables:
+  PLAN: $CI_PROJECT_DIR/plan.tfplan
+  APP_VERSION_FILE: $CI_PROJECT_DIR/app_version.txt
+  DOCKER_IMAGE_NAME: $AWS_REGISTRY_URL/$CI_PROJECT_NAME
+
+stages:
+  - validate
+  - build
+  - plan
+  - apply
+
+.docker_pre:
+  stage: build
+  before_script:
+    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - aws ecr get-login-password --region eu-west-2 | docker login -u AWS --password-stdin $AWS_REGISTRY_URL
+    - export APP_VERSION=$(cat $APP_VERSION_FILE)
+  tags:
+    - shell
+
+.tf_pre:
+  image:
     name: hashicorp/terraform:light
     entrypoint:
-        - '/usr/bin/env'
-        - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
-
-variables:
-    PLAN: $CI_PROJECT_DIR/plan.tfplan
-
-before_script:
+      - "/usr/bin/env"
+      - "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  before_script:
     - apk add curl
     - rm -rf .terraform
     - terraform --version
-    - mkdir -p ~/.aws
     - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
     - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
     - cd ./infra
     - terraform init
-
-stages:
-    - validate
-    - plan
-    - apply
+  tags:
+    - terraform-aws
 
 validate:
-    stage: validate
-    tags:
-    - terraform-aws
-    script:
-      - terraform validate
-      - terraform fmt -check=true
-    only:
-      - branches
+  extends: .tf_pre
+  stage: validate
+  script:
+    - terraform validate
+    - terraform fmt -check=true
+    - terraform output app_version > $APP_VERSION_FILE
+  artifacts:
+    name: version
+    paths:
+      - $APP_VERSION_FILE
+
+feature build:
+  extends: .docker_pre
+  script:
+    - docker build -t $DOCKER_IMAGE_NAME:${APP_VERSION}-${CI_COMMIT_SHA::8} .
+    - docker push $DOCKER_IMAGE_NAME:${APP_VERSION}-${CI_COMMIT_SHA::8}
+  only:
+    - branches
+  except:
+    - master
+
+production build:
+  extends: .docker_pre
+  script:
+    - docker build -t $DOCKER_IMAGE_NAME:${APP_VERSION}-${CI_COMMIT_SHA::8} .
+    - docker tag $DOCKER_IMAGE_NAME:${APP_VERSION}
+    - docker push $DOCKER_IMAGE_NAME:${APP_VERSION}
+    - docker push $DOCKER_IMAGE_NAME:${APP_VERSION}-${CI_COMMIT_SHA::8}
+  only:
+    - master
 
 merge review:
-   stage: plan
-   tags:
-   - terraform-aws
-   script:
-     - terraform plan -out=$PLAN
-     - echo \`\`\`diff > plan.txt
-     - terraform show -no-color ${PLAN} | tee -a plan.txt
-     - echo \`\`\` >> plan.txt
-     - sed -i -e 's/  +/+/g' plan.txt
-     - sed -i -e 's/  ~/~/g' plan.txt
-     - sed -i -e 's/  -/-/g' plan.txt
-     - MESSAGE=$(cat plan.txt)
-     - >-
-       curl -X POST -g -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" 
-       --data-urlencode "body=${MESSAGE}" 
-       "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}/discussions"
-   artifacts:
-     name: plan
-     paths:
-       - $PLAN
-   only:
-     - merge_requests
+  extends: .tf_pre
+  stage: plan
+  script:
+    - terraform plan -out=$PLAN
+    - echo \`\`\`diff > plan.txt
+    - terraform show -no-color ${PLAN}| tee -a plan.txt
+    - echo \`\`\` >> plan.txt
+    - sed -i -e 's/  +/+/g' plan.txt
+    - sed -i -e 's/  ~/~/g' plan.txt
+    - sed -i -e 's/  -/-/g' plan.txt
+    - MESSAGE=$(cat plan.txt)
+    - >-
+      curl -X POST -g -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" 
+      --data-urlencode "body=${MESSAGE}" 
+      "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}/discussions"
+  artifacts:
+    name: plan
+    paths:
+      - $PLAN
+  only:
+    - merge_requests
 
 plan production:
+  extends: .tf_pre
   stage: plan
-  tags:
-  - terraform-aws
   script:
     - terraform plan -out=$PLAN
   artifacts:
@@ -68,11 +102,10 @@ plan production:
       - $PLAN
   only:
     - master
-      
-apply:
+
+apply production:
+  extends: .tf_pre
   stage: apply
-  tags:
-  - terraform-aws
   script:
     - terraform apply -input=false $PLAN
   dependencies:
@@ -80,4 +113,3 @@ apply:
   only:
     - master
   when: manual
-  
