@@ -33,7 +33,7 @@ validate:
   script:
     - terraform validate
     - terraform fmt -check=true
-    - terraform output app_version > $APP_VERSION
+    - terraform output app_version > $APP_VERSION_FILE
   artifacts:
     name: version
     paths:
