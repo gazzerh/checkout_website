@@ -72,6 +72,8 @@ plan production:
       - $PLAN
   only:
     - master
+  except:
+    - triggers
 
 apply production:
   extends: .tf_pre
