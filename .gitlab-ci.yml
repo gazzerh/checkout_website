@@ -3,6 +3,9 @@ variables:
   APP_VERSION_FILE: $CI_PROJECT_DIR/app_version.txt
   DOCKER_IMAGE_NAME: $AWS_REGISTRY_URL/$CI_PROJECT_NAME
 
+cache:
+  key: {}
+
 stages:
   - validate
   - build
