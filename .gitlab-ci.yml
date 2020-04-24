@@ -2,7 +2,6 @@ variables:
   PLAN: $CI_PROJECT_DIR/plan.tfplan
   APP_VERSION_FILE: $CI_PROJECT_DIR/app_version.txt
   DOCKER_IMAGE_NAME: $AWS_REGISTRY_URL/$CI_PROJECT_NAME
-  VAR_STRING: -var 'app_version=${CI_COMMIT_TAG}' -var 'app_name=${CI_PROJECT_NAME}'
 
 stages:
   - validate
@@ -38,19 +37,32 @@ validate:
     name: version
     paths:
       - $APP_VERSION_FILE
-  only:
-    - branches
 
-build:
+feature build:
   stage: build
   tags:
     - shell
   script:
     - export APP_VERSION=$(cat $APP_VERSION_FILE)
-    - docker build -t $DOCKER_IMAGE_NAME:$APP_VERSION .
-    - docker push $DOCKER_IMAGE_NAME:$APP_VERSION
+    - docker image rm $DOCKER_IMAGE_NAME:${APP_VERSION}-stage
+    - docker build -t $DOCKER_IMAGE_NAME:${APP_VERSION}-stage .
+    - docker push $DOCKER_IMAGE_NAME:${APP_VERSION}-stage
   only:
     - branches
+  except:
+    - master
+
+production build:
+  stage: build
+  tags:
+    - shell
+  script:
+    - export APP_VERSION=$(cat $APP_VERSION_FILE)
+    - docker image rm $DOCKER_IMAGE_NAME:${APP_VERSION}
+    - docker build -t $DOCKER_IMAGE_NAME:${APP_VERSION} .
+    - docker push $DOCKER_IMAGE_NAME:${APP_VERSION}
+  only:
+    - master
 
 merge review:
   extends: .tf_pre
@@ -87,7 +99,7 @@ plan production:
   only:
     - master
 
-apply:
+apply production:
   extends: .tf_pre
   stage: apply
   script:
