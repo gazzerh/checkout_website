@@ -46,7 +46,7 @@ build:
   tags:
     - shell
   script:
-    - export APP_VERSION=$(echo $APP_VERSION_FILE)
+    - export APP_VERSION=$(cat $APP_VERSION_FILE)
     - docker build -t $DOCKER_IMAGE_NAME:$APP_VERSION .
     - docker push $DOCKER_IMAGE_NAME:$APP_VERSION
   only:
