@@ -1,6 +1,9 @@
 trigger_scaling:
+  stage: apply
   script:
     - echo "${CI_APP_SCALE_MIN}:${CI_APP_SCALE_MAX} do some shit"
+  tags:
+    - shell
   only:
     variables:
       - $CI_APP_SCALE_MIN
