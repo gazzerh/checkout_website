@@ -38,3 +38,13 @@ variable "log_retention_in_days" {
   description = "How many days are logs retained"
   default     = 7
 }
+
+variable "min_capacity" {
+  description = "what is the minimum amount of running instances"
+  default     = 1
+}
+
+variable "max_capacity" {
+  description = "what is the maxium amount of running instances"
+  default     = 5
+}

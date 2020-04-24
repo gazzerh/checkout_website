@@ -23,6 +23,16 @@ variable "task_resources" {
   }
 }
 
+variable "min_capacity" {
+  description = "what is the minimum amount of running instances"
+  default     = 1
+}
+
+variable "max_capacity" {
+  description = "what is the maxium amount of running instances"
+  default     = 5
+}
+
 variable "ecs_sg" {
   description = "id of the security group created for ECS"
 }
