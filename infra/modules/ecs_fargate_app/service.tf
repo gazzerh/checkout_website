@@ -36,7 +36,7 @@ resource "aws_ecs_task_definition" "ecs_task" {
 resource "aws_ecs_service" "ecs_service" {
   cluster         = var.ecs_cluster.name
   task_definition = "${aws_ecs_task_definition.ecs_task.family}:${aws_ecs_task_definition.ecs_task.revision}"
-  desired_count   = 1
+  desired_count   = var.desired_count
   launch_type     = "FARGATE"
   network_configuration {
     security_groups  = [var.ecs_sg.id]

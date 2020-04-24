@@ -61,8 +61,9 @@ module "ecs_fargate_app" {
   ecs_task_execution_role = module.ecs_cluster.ecs_task_execution_role
   cloudwatch_log_group    = module.cloudwatch.cloudwatch_log_group
 
-  min_capacity = var.min_capacity
-  max_capacity = var.max_capacity
+  min_capacity  = var.min_capacity
+  max_capacity  = var.max_capacity
+  desired_count = var.desired_count
 
   container_definition = { // container memory and cpu dont't need to be provided in fargate deployments
     name           = "${format("%s-container", var.app_name)}"

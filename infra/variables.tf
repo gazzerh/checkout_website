@@ -48,3 +48,8 @@ variable "max_capacity" {
   description = "what is the maxium amount of running instances"
   default     = 5
 }
+
+variable "desired_count" {
+  description = "what is the desired amount of running instances"
+  default     = 1
+}
