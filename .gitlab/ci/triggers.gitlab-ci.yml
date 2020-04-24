@@ -1,9 +1,24 @@
-trigger_scaling:
+trigger scaling plan:
+  extends: .tf_pre
+  stage: plan
+  script:
+    - terraform plan -var "var.min_capacity=${CI_APP_SCALE_MIN}" -var "var.max_capacity=${CI_APP_SCALE_MAX" -var-out=$PLAN
+  artifacts:
+    name: plan
+    paths:
+      - $PLAN
+  only:
+    variables:
+      - $CI_APP_SCALE_MIN
+      - $CI_APP_SCALE_MAX
+
+trigger scaling apply:
+  extends: .tf_pre
   stage: apply
   script:
-    - echo "${CI_APP_SCALE_MIN}:${CI_APP_SCALE_MAX} do some shit"
-  tags:
-    - shell
+    - terraform apply -input=false $PLAN
+  dependencies:
+    - plan production
   only:
     variables:
       - $CI_APP_SCALE_MIN
