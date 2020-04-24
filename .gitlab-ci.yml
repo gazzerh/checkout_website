@@ -47,7 +47,7 @@ stages:
   script:
     - terraform validate
     - terraform fmt -check=true
-    - rm -rf $APP_VERSION_FILE
+    - terraform refresh
     - terraform output app_version > $APP_VERSION_FILE
   artifacts:
     name: version

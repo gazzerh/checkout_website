@@ -10,7 +10,7 @@ variable "app_name" {
 
 variable "app_version" {
   description = "Version of the application that should be deployed"
-  default     = "v0.1"
+  default     = "v0.2"
 }
 
 variable "fqdn" {
