@@ -9,7 +9,147 @@ stages:
   - plan
   - apply
 
-include:
-  - local: .gitlab/ci/terraform.gitlab-ci.yml
-  - local: .gitlab/ci/docker.gitlab-ci.yml
-  - local: .gitlab/ci/triggers.gitlab-ci.yml
+.tf_pre:
+  image:
+    name: hashicorp/terraform:light
+    entrypoint:
+      - "/usr/bin/env"
+      - "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  before_script:
+    - apk add curl
+    - rm -rf .terraform
+    - terraform --version
+    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - cd ./infra
+    - terraform init
+  tags:
+    - terraform-aws
+
+.validate:
+  extends: .tf_pre
+  stage: validate
+  script:
+    - terraform validate
+    - terraform fmt -check=true
+    - terraform refresh
+    - terraform output app_version > $APP_VERSION_FILE
+  artifacts:
+    name: version
+    paths:
+      - $APP_VERSION_FILE
+
+validate branch:
+  extends: .validate
+  only:
+    - branches
+
+validate merge_request:
+  extends: .validate
+  only:
+    - merge_requests
+
+merge review:
+  extends: .tf_pre
+  stage: plan
+  script:
+    - terraform plan -out=$PLAN
+    - echo \`\`\`diff > plan.txt
+    - terraform show -no-color ${PLAN}| tee -a plan.txt
+    - echo \`\`\` >> plan.txt
+    - sed -i -e 's/  +/+/g' plan.txt
+    - sed -i -e 's/  ~/~/g' plan.txt
+    - sed -i -e 's/  -/-/g' plan.txt
+    - MESSAGE=$(cat plan.txt)
+    - >-
+      curl -X POST -g -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" 
+      --data-urlencode "body=${MESSAGE}" 
+      "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}/discussions"
+  artifacts:
+    name: plan
+    paths:
+      - $PLAN
+  only:
+    - merge_requests
+
+plan production:
+  extends: .tf_pre
+  stage: plan
+  script:
+    - terraform plan -out=$PLAN
+  artifacts:
+    name: plan
+    paths:
+      - $PLAN
+  only:
+    - master
+  except:
+    - triggers
+
+apply production:
+  extends: .tf_pre
+  stage: apply
+  script:
+    - terraform apply -input=false $PLAN
+  dependencies:
+    - plan production
+  only:
+    - master
+  when: manual
+  except:
+    - triggers
+.docker_pre:
+  stage: build
+  before_script:
+    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - aws ecr get-login-password --region eu-west-2 | docker login -u AWS --password-stdin $AWS_REGISTRY_URL
+    - export APP_VERSION=$(cat $APP_VERSION_FILE)
+  tags:
+    - shell
+
+feature build:
+  extends: .docker_pre
+  script:
+    - docker build -t $DOCKER_IMAGE_NAME:${APP_VERSION}-${CI_COMMIT_SHA::8} .
+    - docker push $DOCKER_IMAGE_NAME:${APP_VERSION}-${CI_COMMIT_SHA::8}
+  only:
+    - branches
+    - merge_requests
+  except:
+    - master
+
+production build:
+  extends: .docker_pre
+  script:
+    - docker build -t $DOCKER_IMAGE_NAME:${APP_VERSION}-${CI_COMMIT_SHA::8} .
+    - docker tag  $DOCKER_IMAGE_NAME:${APP_VERSION}-${CI_COMMIT_SHA::8} ${DOCKER_IMAGE_NAME}:${APP_VERSION}
+    - docker push $DOCKER_IMAGE_NAME:${APP_VERSION}
+    - docker push $DOCKER_IMAGE_NAME:${APP_VERSION}-${CI_COMMIT_SHA::8}
+  only:
+    - master
+trigger scaling plan:
+  extends: .tf_pre
+  stage: plan
+  script:
+    - terraform plan -var "min_capacity=${CI_APP_SCALE_MIN}" -var "max_capacity=${CI_APP_SCALE_MAX}" -out=$PLAN
+  artifacts:
+    name: plan
+    paths:
+      - $PLAN
+  only:
+    variables:
+      - $CI_APP_SCALE_MIN
+      - $CI_APP_SCALE_MAX
+
+trigger scaling apply:
+  extends: .tf_pre
+  stage: apply
+  script:
+    - terraform apply -input=false $PLAN
+  dependencies:
+    - plan production
+  only:
+    variables:
+      - $CI_APP_SCALE_MIN
+      - $CI_APP_SCALE_MAX
