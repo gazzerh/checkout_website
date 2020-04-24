@@ -83,3 +83,5 @@ apply production:
   only:
     - master
   when: manual
+  except:
+    - triggers
