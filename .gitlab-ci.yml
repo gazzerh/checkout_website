@@ -47,6 +47,9 @@ validate:
     name: version
     paths:
       - $APP_VERSION_FILE
+  only:
+    - branches
+    - merge_requests
 
 feature build:
   extends: .docker_pre
