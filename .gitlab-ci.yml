@@ -36,7 +36,7 @@ stages:
   tags:
     - terraform-aws
 
-validate:
+.validate:
   extends: .tf_pre
   stage: validate
   script:
@@ -47,8 +47,15 @@ validate:
     name: version
     paths:
       - $APP_VERSION_FILE
+
+validate branch:
+  extends: .validate
   only:
     - branches
+
+validate merge_request:
+  extends: .validate
+  only:
     - merge_requests
 
 feature build:
