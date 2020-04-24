@@ -3,8 +3,8 @@ variables:
   APP_VERSION_FILE: $CI_PROJECT_DIR/app_version.txt
   DOCKER_IMAGE_NAME: $AWS_REGISTRY_URL/$CI_PROJECT_NAME
 
-cache:
-  key: {}
+.no_cache:
+  cache: {}
 
 stages:
   - validate
@@ -13,6 +13,7 @@ stages:
   - apply
 
 .docker_pre:
+  extends: .no_cache
   stage: build
   before_script:
     - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
@@ -23,6 +24,7 @@ stages:
     - shell
 
 .tf_pre:
+  extends: .no_cache
   image:
     name: hashicorp/terraform:light
     entrypoint:
