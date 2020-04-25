@@ -146,6 +146,7 @@ trigger scaling plan:
     variables:
       - $CI_APP_SCALE_MIN
       - $CI_APP_SCALE_MAX
+      - $CI_APP_SCALE_DESIRED
 
 trigger scaling apply:
   extends: .tf_pre
