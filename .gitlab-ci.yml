@@ -112,7 +112,7 @@ apply production:
 feature build:
   extends: .docker_pre
   script:
-    - docker build -t $DOCKER_IMAGE_NAME:${APP_VERSION}-${CI_COMMIT_SHA::8} .
+    - docker build --build-arg APP_VERSION=$APP_VERSION -t $DOCKER_IMAGE_NAME:${APP_VERSION}-${CI_COMMIT_SHA::8} .
     - docker push $DOCKER_IMAGE_NAME:${APP_VERSION}-${CI_COMMIT_SHA::8}
   only:
     - branches
