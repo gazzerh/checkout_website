@@ -22,7 +22,6 @@ resource "aws_security_group_rule" "egress" {
   security_group_id = aws_security_group.app_lb.id
 }
 
-# add alb security group to backend security group
 resource "aws_security_group_rule" "backend_ingress" {
   type                     = "ingress"
   from_port                = 0
