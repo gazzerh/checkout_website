@@ -48,5 +48,6 @@ resource "aws_ecs_service" "ecs_service" {
     container_name   = format("%s-container", var.app_name)
     container_port   = var.container_definition.container_port
   }
-  name = format("%s-service", var.app_name)
+  name       = format("%s-service", var.app_name)
+  depends_on = [aws_alb_listener.listener_https]
 }

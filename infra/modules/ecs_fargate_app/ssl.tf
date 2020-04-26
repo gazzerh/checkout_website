@@ -1,9 +1,3 @@
-#locals {
-#  fqdn_parts  = split(".", var.fqdn)
-#  host_part   = split(".", var.fqdn)[0]
-#  domain_part = join(".", (slice(local.fqdn_parts, 1, length(local.fqdn_parts))))
-#}
-
 data "aws_route53_zone" "zone" {
   name = format("%s.", var.fqdn)
 }
